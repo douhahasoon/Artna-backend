@@ -111,3 +111,89 @@ class artist(Entity):
             img.thumbnail(output_size)
             img.save(self.image.path)
             # print(self.image.path)
+
+class Order(Entity):
+    user = models.ForeignKey(User, verbose_name='user', related_name='orders', null=True, blank=True,
+                             on_delete=models.CASCADE)
+    address = models.ForeignKey('commerce.Address', verbose_name='address', null=True, blank=True,
+                                on_delete=models.CASCADE)
+    total = models.DecimalField('total', blank=True, null=True, max_digits=1000, decimal_places=0)
+    status = models.ForeignKey('commerce.OrderStatus', verbose_name='status', related_name='orders',
+                               on_delete=models.CASCADE)
+    note = models.CharField('note', null=True, blank=True, max_length=255)
+    ref_code = models.CharField('ref code', max_length=255)
+    ordered = models.BooleanField('ordered')
+    items = models.ManyToManyField('commerce.Item', verbose_name='items', related_name='order')
+
+    def __str__(self):
+        return f'{self.user.first_name} + {self.total}'
+
+    @property
+    def order_total(self):
+        return sum(
+            i.product.discounted_price * i.item_qty for i in self.items.all()
+        )
+
+
+class Item(Entity):
+    """
+    Product can live alone in the system, while
+    Item can only live within an order
+    """
+    user = models.ForeignKey(User, verbose_name='user', related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey('commerce.Product', verbose_name='product',
+                                on_delete=models.CASCADE)
+    item_qty = models.IntegerField('item_qty')
+    ordered = models.BooleanField('ordered', default=False)
+
+    def __str__(self):
+        return f''
+
+
+class OrderStatus(Entity):
+    NEW = 'NEW'  # Order with reference created, items are in the basket.
+    # CREATED = 'CREATED'  # Created with items and pending payment.
+    # HOLD = 'HOLD'  # Stock reduced but still awaiting payment.
+    # FAILED = 'FAILED'  # Payment failed, retry is available.
+    # CANCELLED = 'CANCELLED'  # Cancelled by seller, stock increased.
+    PROCESSING = 'PROCESSING'  # Payment confirmed, processing order.
+    SHIPPED = 'SHIPPED'  # Shipped to customer.
+    COMPLETED = 'COMPLETED'  # Completed and received by customer.
+    REFUNDED = 'REFUNDED'  # Fully refunded by seller.
+
+    title = models.CharField('title', max_length=255, choices=[
+        (NEW, NEW),
+        (PROCESSING, PROCESSING),
+        (SHIPPED, SHIPPED),
+        (COMPLETED, COMPLETED),
+        (REFUNDED, REFUNDED),
+    ])
+    is_default = models.BooleanField('is default')
+
+    def __str__(self):
+        return self.title
+
+class City(Entity):
+    name = models.CharField('city', max_length=255)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = 'city'
+        verbose_name_plural = 'cities'
+
+
+class Address(Entity):
+    user = models.ForeignKey(User, verbose_name='user', related_name='address',
+                             on_delete=models.CASCADE)
+    work_address = models.BooleanField('work address', null=True, blank=True)
+    address1 = models.CharField('address1', max_length=255)
+    address2 = models.CharField('address2', null=True, blank=True, max_length=255)
+    city = models.ForeignKey(City, related_name='addresses', on_delete=models.CASCADE)
+    phone = models.CharField('phone', max_length=255)
+
+    def __str__(self):
+        return f'{self.user.first_name} - {self.address1} - {self.address2} - {self.phone}'
+
+
