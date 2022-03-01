@@ -1,8 +1,7 @@
 from django.contrib import admin
 from simple_history.admin import SimpleHistoryAdmin
 
-from commerce.models import Product,  ProductImage, Category, artist,  \
-    Label
+from commerce.models import Product,  ProductImage, Category,Order,Item, OrderStatus, City,Address, artist, Label
 
 
 class InlineProductImage(admin.TabularInline):
@@ -19,3 +18,8 @@ admin.site.register(Product ,ProductAdmin)
 admin.site.register(Category)
 admin.site.register(artist)
 admin.site.register(Label)
+admin.site.register(Order)
+admin.site.register(Item)
+admin.site.register( OrderStatus)
+admin.site.register( City)
+admin.site.register(Address)
